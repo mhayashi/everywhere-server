@@ -37,12 +37,12 @@ SocketManager.prototype.register = function(socket, options){
     context.connect(client);
 
     client.on('message', function(msg){
-      if (development) console.log(msg);
+      if (this.development) console.log(msg);
       context.receive(client, msg);
     });
     
     client.on('disconnect', function(){
-      if (development) console.log(msg);
+      if (this.development) console.log(msg);
       context.disconnect(client);
     });
 
