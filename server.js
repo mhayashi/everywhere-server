@@ -232,7 +232,10 @@ function checkURL(url) {
 function removeParams(url) {
   var urlparts = url.split('#');
   if (urlparts.length>=2) {
-    url = urlparts[0];
+    var urlparts2 = url.split('#!');
+    if (urlparts2.length<=1) {
+      url = urlparts[0];
+    }
   }
 //   urlparts = url.split('?');
 //   if (urlparts.length>=2) {
@@ -248,4 +251,3 @@ function removeParams(url) {
 //   }
   return url;
 };
-
