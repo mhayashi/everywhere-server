@@ -7,6 +7,8 @@ var http = require('http'),
     redis = require('redis'),
     site,
     ws,
+    users = {},
+    development = true,
     exemptURLs = [
 //   /http:\/\/www\.google\..*/,
 //   /http:\/\/mail\.google\.com.*/,
@@ -95,14 +97,16 @@ site = http.createServer(function(req, res){
 site.listen(80);
 
 
+
+// Websockets
+
 ws = http.createServer(function(req, res){
 	res.writeHead(200, {'Content-Type': 'text/plain'});
 	res.end('');
 });
 ws.listen(8000);
 
-var io = io.listen(ws),
-		users = {};
+io = io.listen(ws);
 
 var redis_client = redis.createClient();
 redis_client.on('error', function(err) {
@@ -115,18 +119,19 @@ sm.register(io);
 sm.on('join', function(client, message){
   // TODO: searching maybe costs a lot.
   var vurl = validateURL(message.url);
+  if (development) console.log('join:'+vurl);
   if (vurl) {
-    if (!sm.channels[vurl] || (sm.channels[vurl].indexOf(client.sessionId) == -1)) {
+    if (!sm.channels[vurl] || (sm.channels[vurl].indexOf(client.sessionId) === -1)) {
       sm.connectToChannel(client, vurl);
-      users[client.sessionId] = {username: message.username,
-                                 // realname: message.realname,
-                                 // location: message.location,
-                                 image_url: message.image_url};
+      users[client.sessionId] = { username: message.username,
+                                  // realname: message.realname,
+                                  // location: message.location,
+                                  image_url: message.image_url };
       sendLog(client, message);
-      sm.broadcastToChannel(client, vurl, message.msgType, {message: message});
+      sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
     } else {
       sendLog(client, message);
-      sm.send('join', client.sessionId, {message: message});
+      sm.send('join', client.sessionId, { message: message });
     }
   }
 });
@@ -134,19 +139,20 @@ sm.on('join', function(client, message){
 sm.on('update', function(client, message){
   // when replying
   var vurl = validateURL(message.url);
+  if (development) console.log('update:'+vurl);
   if (vurl) {
     if (message.message.match(/^@\w+ /)) {
       var replyTo = RegExp.lastMatch.replace(/[@ ]/, '');
-      for (var i in users) {
-        if (users[i]['username'] == replyTo) {
+      for (var i = 0, len = users.length; i < len ; i++) {
+        if (users[i]['username'] === replyTo) {
           replyTo = i;
           break;
         }
       }
-      sm.send('update', replyTo, {message: message});
+      sm.send('update', replyTo, { message: message });
       redis_client.rpush(vurl, JSON.stringify(message));
     } else {
-      sm.broadcastToChannel(client, vurl, message.msgType, {message: message});
+      sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
       redis_client.rpush(vurl, JSON.stringify(message));
       if (message.shortURL) {
         redis_client.set(vurl+':shorten', message.shortURL);
@@ -158,7 +164,7 @@ sm.on('update', function(client, message){
 sm.on('exit', function(client, message){
   var vurl = validateURL(message.url);
   if (vurl) {
-    sm.broadcastToChannel(client, vurl, message.msgType, {message: message});
+    sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
     sm.exitFromChannel(client, vurl);
   }
 });
@@ -175,7 +181,7 @@ function sendLog(client, message) {
         if (sessionId) {
           var user = users[sessionId];
           if (user) {
-            _users.push({username: user.username, image_url: user.image_url, message: ""});
+            _users.push({ username: user.username, image_url: user.image_url, message: "" });
           }
         }
       }
