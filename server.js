@@ -8,7 +8,7 @@ var http = require('http'),
     site,
     ws,
     users = {},
-    development = true,
+    development = false,
     exemptURLs = [
 //   /http:\/\/www\.google\..*/,
 //   /http:\/\/mail\.google\.com.*/,
@@ -21,7 +21,6 @@ var send404 = function(res){
 	res.end();
 };
 
-console.log('server start');
 site = http.createServer(function(req, res){
 	var path = url.parse(req.url).pathname;
 	switch (path){

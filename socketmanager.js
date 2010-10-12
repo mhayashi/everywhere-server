@@ -37,12 +37,12 @@ SocketManager.prototype.register = function(socket, options){
     context.connect(client);
 
     client.on('message', function(msg){
-      console.log(msg);
+      // console.log(msg);
       context.receive(client, msg);
     });
     
     client.on('disconnect', function(){
-      console.log('disconnect');
+      // console.log('disconnect');
       context.disconnect(client);
     });
 
@@ -71,11 +71,11 @@ SocketManager.prototype.disconnect = function(client){
 SocketManager.prototype.receive = function(client, msg){
   var parsed = JSON.parse(msg);
   //var parsed = msg;
-  sys.inspect(parsed);
-  console.log(typeof parsed);
-  console.log(parsed.msgType);
-  console.log(parsed['msgType']);
-  console.log(this.methods[parsed.msgType]);
+  // sys.inspect(parsed);
+  // console.log(typeof parsed);
+  // console.log(parsed.msgType);
+  // console.log(parsed['msgType']);
+  // console.log(this.methods[parsed.msgType]);
   if (parsed.msgType && this.methods[parsed.msgType]){
     console.log(parsed);
     this.methods[parsed.msgType](client, parsed);
