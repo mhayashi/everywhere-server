@@ -24,7 +24,6 @@ var SocketManager = exports.SocketManager = function(){
   this.methods = {};
   this.sessions = {};
   this.channels = {};
-  this.development = true;
 };
 
 SocketManager.prototype.register = function(socket, options){
@@ -42,7 +41,7 @@ SocketManager.prototype.register = function(socket, options){
     });
     
     client.on('disconnect', function(){
-      console.log(msg);
+      console.log('disconnect');
       context.disconnect(client);
     });
 
@@ -70,8 +69,11 @@ SocketManager.prototype.disconnect = function(client){
 
 SocketManager.prototype.receive = function(client, msg){
   //var parsed = JSON.parse(msg);
+  console.log(msg);
   var parsed = msg;
+  console.log(this.methods);
   if (parsed.msgType && this.methods[parsed.msgType]){
+    console.log(parsed);
     this.methods[parsed.msgType](client, parsed);
   }
 };
