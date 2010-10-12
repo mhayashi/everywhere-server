@@ -19,6 +19,7 @@
  *   });
  *
  */
+var sys = require('sys');
 var SocketManager = exports.SocketManager = function(){
   this.socket = null;
   this.methods = {};
