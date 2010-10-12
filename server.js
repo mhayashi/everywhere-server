@@ -98,21 +98,19 @@ site.listen(80);
 
 
 
-// Websockets
-
-ws = http.createServer(function(req, res){
-	res.writeHead(200, {'Content-Type': 'text/plain'});
-	res.end('');
-});
-ws.listen(8000);
-
-io = io.listen(ws);
-
+// redis
 var redis_client = redis.createClient();
 redis_client.on('error', function(err) {
   console.log('Redis connection error to ' + redis_client.host + ':' + redis_client.port + ' - ' + err);
 });
 
+// websockets
+ws = http.createServer(function(req, res){
+	res.writeHead(200, {'Content-Type': 'text/plain'});
+	res.end('');
+});
+ws.listen(8000);
+io = io.listen(ws);
 sm = new sm.SocketManager();
 sm.register(io);
 

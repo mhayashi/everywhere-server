@@ -20,126 +20,129 @@
  *
  */
 var SocketManager = exports.SocketManager = function(){
-    this.socket = null;
-    this.methods = {};
-    this.sessions = {};
-    this.channels = {};
+  this.socket = null;
+  this.methods = {};
+  this.sessions = {};
+  this.channels = {};
+  this.development = true;
 };
 
 SocketManager.prototype.register = function(socket, options){
-    var context = this;
-    
-    this.socket = socket;
-    
-    this.socket.on('connection', function(client){
+  var context = this;
+  
+  this.socket = socket;
+  
+  this.socket.on('connection', function(client){
 
-        context.connect(client);
+    context.connect(client);
 
-        client.on('message', function(msg){
-            context.receive(client, msg);
-        });
-        
-        client.on('disconnect', function(){
-            context.disconnect(client);
-        });
-
+    client.on('message', function(msg){
+      if (development) console.log(msg);
+      context.receive(client, msg);
     });
-};
     
+    client.on('disconnect', function(){
+      if (development) console.log(msg);
+      context.disconnect(client);
+    });
+
+  });
+};
+
 SocketManager.prototype.connect = function(client){
-    this.sessions[client.sessionId] = client;
+  this.sessions[client.sessionId] = client;
 };
 
 SocketManager.prototype.disconnect = function(client){
-    if (client.channels && client.channels.length>0){
-        for (var i=0;i<client.channels.length;i++){
-            var chn = this.channels[client.channels[i]];
-            chn.splice(chn.indexOf(client.sessionId),1);
+  if (client.channels && client.channels.length>0){
+    for (var i=0;i<client.channels.length;i++){
+      var chn = this.channels[client.channels[i]];
+      chn.splice(chn.indexOf(client.sessionId),1);
 
-            // If it was the last one, delete it:
-            if (chn.length==0){
-                delete this.channels[client.channels[i]];
-            }
-        }
+      // If it was the last one, delete it:
+      if (chn.length==0){
+        delete this.channels[client.channels[i]];
+      }
     }
-    delete this.sessions[client.sessionId];
+  }
+  delete this.sessions[client.sessionId];
 };
 
 SocketManager.prototype.receive = function(client, msg){
-    //var parsed = JSON.parse(msg);
-    var parsed = msg;
-    if (parsed.msgType && this.methods[parsed.msgType]){
-        this.methods[parsed.msgType](client, parsed);
-    }
+  //var parsed = JSON.parse(msg);
+  var parsed = msg;
+  if (parsed.msgType && this.methods[parsed.msgType]){
+    this.methods[parsed.msgType](client, parsed);
+  }
 };
-    
+
 SocketManager.prototype.send = function(msgType, sessionId, msgObj){
-    if (this.sessions[sessionId]){
-        msgObj.msgType = msgType;
-        this.sessions[sessionId].send(JSON.stringify(msgObj));
-    }
+  if (this.sessions[sessionId]){
+    msgObj.msgType = msgType;
+    this.sessions[sessionId].send(JSON.stringify(msgObj));
+  }
 };
 
 SocketManager.prototype.connectToChannel = function(client, channelId){
-    if (!this.channels[channelId]){
-        this.channels[channelId] = [];
-    }
-    
-    this.channels[channelId].push(client.sessionId);
+  if (!this.channels[channelId]){
+    this.channels[channelId] = [];
+  }
+  
+  this.channels[channelId].push(client.sessionId);
 	
-    if (!client.channels){
-		    client.channels = [];
-    }
-    client.channels.push(channelId);
+  if (!client.channels){
+		client.channels = [];
+  }
+  client.channels.push(channelId);
 };
-    
+
 SocketManager.prototype.exitFromChannel = function(client, channelId){
-    if (this.channels[channelId]){
-        var clientId = this.channels[channelId].indexOf(client.sessionId);
-        if (clientId != -1) {
-            this.channels[channelId].remove(clientId);
-        }
+  if (this.channels[channelId]){
+    var clientId = this.channels[channelId].indexOf(client.sessionId);
+    if (clientId != -1) {
+      this.channels[channelId].remove(clientId);
     }
-    if (client.channels){
-        var channelIndex = client.channels.indexOf(channelId);
-        if (channelIndex != -1) {
-            client.channels.remove(channelIndex);
-        }
+  }
+  if (client.channels){
+    var channelIndex = client.channels.indexOf(channelId);
+    if (channelIndex != -1) {
+      client.channels.remove(channelIndex);
     }
+  }
 };
-    
+
 SocketManager.prototype.broadcastToChannel = function(client, channelId, msgType, msgObj){
-    if (this.channels[channelId]){
-        msgObj['msgType'] = msgType;
-        var msg = JSON.stringify(msgObj);
+  if (this.channels[channelId]){
+    msgObj['msgType'] = msgType;
+    var msg = JSON.stringify(msgObj);
     
-        for (var i=0;i<this.channels[channelId].length;i++){
-            var sessionId = this.channels[channelId][i];
-            if (this.sessions[sessionId]){
-                this.sessions[sessionId].send(msg);
-            } else {
-                this.channels[channelId].splice(i,1);
-                i--;
-            }
-        }
+    for (var i=0;i<this.channels[channelId].length;i++){
+      var sessionId = this.channels[channelId][i];
+      if (this.sessions[sessionId]){
+        this.sessions[sessionId].send(msg);
+      } else {
+        this.channels[channelId].splice(i,1);
+        i--;
+      }
     }
+  }
 };
 
 SocketManager.prototype.on = function(methodName, closure){
-    this.methods[methodName] = closure;
+  this.methods[methodName] = closure;
 };
 
 // Array IndexOf
 if (!Array.prototype.indexOf) {
   Array.prototype.indexOf = function (obj, fromIndex) {
     if (fromIndex == null) {
-        fromIndex = 0;
+      fromIndex = 0;
     } else if (fromIndex < 0) {
-        fromIndex = Math.max(0, this.length + fromIndex);
+      fromIndex = Math.max(0, this.length + fromIndex);
     }
     for (var i = fromIndex, j = this.length; i < j; i++) {
-        if (this[i] === obj)
-            return i;
+      if (this[i] === obj)
+        return i;
     }
     return -1;
   };
