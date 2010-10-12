@@ -68,9 +68,8 @@ SocketManager.prototype.disconnect = function(client){
 };
 
 SocketManager.prototype.receive = function(client, msg){
-  //var parsed = JSON.parse(msg);
-  console.log(msg);
-  var parsed = msg;
+  var parsed = JSON.parse(msg);
+  //var parsed = msg;
   console.log(this.methods);
   if (parsed.msgType && this.methods[parsed.msgType]){
     console.log(parsed);
