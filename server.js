@@ -139,15 +139,19 @@ sm.on('update', function(client, message){
   if (development) console.log('update:'+vurl);
   if (vurl) {
     if (message.message.match(/^@\w+ /)) {
-      var replyTo = RegExp.lastMatch.replace(/[@ ]/, '');
-      for (var i = 0, len = users.length; i < len ; i++) {
-        if (users[i]['username'] === replyTo) {
-          replyTo = i;
-          break;
+      var src = RegExp.lastMatch;
+      var replyTo = src.replace(/@/, '').replace(/ /, '');
+      for (var sessionId in users) {
+        if (development) console.log(sessionId);
+        if (users.hasOwnProperty(sessionId)) {
+          if (users[sessionId]['username'] === replyTo) {
+            sm.send('update', client.sessionId, { message: message });
+            sm.send('update', sessionId, { message: message });
+            redis_client.rpush(vurl, JSON.stringify(message));
+            break;
+          }
         }
       }
-      sm.send('update', replyTo, { message: message });
-      redis_client.rpush(vurl, JSON.stringify(message));
     } else {
       sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
       redis_client.rpush(vurl, JSON.stringify(message));
