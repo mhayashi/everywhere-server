@@ -77,7 +77,7 @@ SocketManager.prototype.receive = function(client, msg){
   // console.log(parsed['msgType']);
   // console.log(this.methods[parsed.msgType]);
   if (parsed.msgType && this.methods[parsed.msgType]){
-    console.log(parsed);
+    // console.log(parsed);
     this.methods[parsed.msgType](client, parsed);
   }
 };
