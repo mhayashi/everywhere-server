@@ -71,7 +71,7 @@ site = http.createServer(function(req, res){
       });
     } else if (/\.(jpg)$/.test(path)) {
 		  fs.readFile(__dirname + path, function(err, data){
-        res.writeHead(200, {'Content-Type': 'image/css'});
+        res.writeHead(200, {'Content-Type': 'image/jpeg'});
         res.write(data);
         res.end();
       });
