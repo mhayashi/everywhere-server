@@ -162,6 +162,16 @@ sm.on('update', function(client, message){
   }
 });
 
+sm.on('edit', function(client, message){
+  // when replying
+  var vurl = validateURL(message.url);
+  if (development) console.log('update:'+vurl);
+  if (vurl) {
+    sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
+    //redis_client.rpush(vurl+':edit:'+message.username, JSON.stringify(message));
+  }
+});
+
 sm.on('exit', function(client, message){
   var vurl = validateURL(message.url);
   if (vurl) {
