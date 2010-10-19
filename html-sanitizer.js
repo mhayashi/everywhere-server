@@ -25,10 +25,13 @@
  * @provides html, html_sanitize
  */
 
+var html4_defs = require('./html4-defs'),
+    html4 = html4_defs.html4;
+
 /**
  * @namespace
  */
-var html = (function () {
+var html = exports.html = (function () {
   var lcase;
   // The below may not be true on browsers in the Turkish locale.
   if ('script' === 'SCRIPT'.toLowerCase()) {
@@ -482,7 +485,7 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
  *     apply to names, ids, and classes.
  * @return {string} html
  */
-function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
+exports.html_sanitize = function (htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
   var out = [];
   html.makeHtmlSanitizer(
       function sanitizeAttribs(tagName, attribs) {
@@ -490,12 +493,14 @@ function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
           var attribName = attribs[i];
           var value = attribs[i + 1];
           var atype = null, attribKey;
+          //console.log(attribName +":"+ value +":"+  atype);
           if ((attribKey = tagName + '::' + attribName,
                html4.ATTRIBS.hasOwnProperty(attribKey))
               || (attribKey = '*::' + attribName,
                   html4.ATTRIBS.hasOwnProperty(attribKey))) {
             atype = html4.ATTRIBS[attribKey];
           }
+          //console.log(atype);
           if (atype !== null) {
             switch (atype) {
               case html4.atype.NONE: break;
