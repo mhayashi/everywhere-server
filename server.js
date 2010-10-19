@@ -8,7 +8,12 @@ var http = require('http'),
     site,
     ws,
     users = {},
+    shared = {},
     development = false,
+    jsdom  = require("jsdom"),
+    window = jsdom.jsdom().createWindow(),
+    html_sanitizer = require('./html-sanitizer'),
+    html_sanitize = html_sanitizer.html_sanitize,
     exemptURLs = [
 //   /http:\/\/www\.google\..*/,
 //   /http:\/\/mail\.google\.com.*/,
@@ -103,6 +108,30 @@ redis_client.on('error', function(err) {
   console.log('Redis connection error to ' + redis_client.host + ':' + redis_client.port + ' - ' + err);
 });
 
+
+var sanitize = function(message, callback) {
+  jsdom.jQueryify(window, __dirname + "/lib/jquery-1.4.2.min.js" , function() {
+    var $ = window.jQuery;
+    var old_value = $('<div>');
+    old_value.html(message.old_value);
+    var old_link = old_value.find('a');
+
+    var new_value = $('<div>');
+    new_value.html(message.new_value);
+    new_value.find('a').each(function(i) {
+      $(this).attr('lwe-href', $(old_link[i]).attr('lwe-href'));
+    });
+
+    function urlX(url) {
+      if (/^javascript:void\(0\)/) {
+        return url;
+      }
+    }
+    
+    callback(html_sanitize(new_value.html(), urlX));
+  });
+};
+
 // websockets
 ws = http.createServer(function(req, res){
 	res.writeHead(200, {'Content-Type': 'text/plain'});
@@ -162,13 +191,77 @@ sm.on('update', function(client, message){
   }
 });
 
+
+function getSessionID(username) {
+  for (var sessionId in users) {
+    if (users.hasOwnProperty(sessionId)) {
+      if (users[sessionId]['username'] === username) {
+        return sessionId;
+      }
+    }
+  }
+}
+
+function addShare(vurl, owner, username) {
+  if (shared[vurl+owner]) {
+    if (username) {
+      var sessionID = getSessionID(username);
+      shared[vurl+owner].push(sessionID);
+    }
+  } else {
+    shared[vurl+owner] = [];
+    shared[vurl+owner].push(owner);
+    if (username) {
+      shared[vurl+owner].push(username);
+    }
+  }
+}
+
+function removeShare(vurl, owner, username) {
+  if (shared[vurl+owner]) {
+    shared[vurl+owner].remove(username);
+  }
+}
+
 sm.on('edit', function(client, message){
   // when replying
   var vurl = validateURL(message.url);
-  if (development) console.log('update:'+vurl);
+  if (development) console.log('edit:'+vurl);
+
   if (vurl) {
-    sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
-    //redis_client.rpush(vurl+':edit:'+message.username, JSON.stringify(message));
+    sanitize(message.message, function(sanitized) {
+      console.log(sanitized);
+      message.message.new_value = sanitized;
+
+      addShare(message.username);
+
+      if (vurl === 'http://everywhere.no.de/demo') {
+        sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
+      } else {
+        sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
+        // for (var i = 0; i < shared[vurl+owner].length; i++ ) {
+          
+        //   sm.send('edit', client.sessionId, {message: { url: vurl,
+        //                                                shortURL: null,
+        //                                                log: null,
+        //                                                users: _users }});
+        //   sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
+        // }
+      }
+      //redis_client.rpush(vurl+':edit:'+message.username, JSON.stringify(message));
+    });
+  }
+});
+
+sm.on('share', function(client, message){
+  var vurl = validateURL(message.url);
+  if (vurl) {
+    shared[vurl+':'+message.username].push(message.message.username);
+    if (message.message.status) {
+      addShare(message.username, message.message.username);
+    } else {
+      removeShare(message.username, message.message.username);
+    }
   }
 });
 
