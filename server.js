@@ -143,7 +143,7 @@ var getEachEdit = function(key) {
 var sendEdit = function(vurl, client) {
   redis_client.smembers(vurl+'|edit', function(err, res) {
     var edits = {};
-    console.log(res.length);
+    //console.log(res.length);
     var counter = 0;
     for (var i = 0; i < res.length; i++) {
       res[i] = ''+res[i];
@@ -152,7 +152,7 @@ var sendEdit = function(vurl, client) {
         edits[owner] = edit;
         counter++;
         if (counter >= res.length) {
-          console.log('send');
+          //console.log('send');
           sm.send('edits', client.sessionId, { message: { url: vurl,
                                                           edits: edits }});
         }
@@ -161,11 +161,28 @@ var sendEdit = function(vurl, client) {
   });
 };
 
-var sanitize = function(message, callback) {
-  jsdom.jQueryify(window, __dirname + "/lib/jquery-1.4.2.min.js", function() {
-    jQuery = window.jQuery;
-    $ = jQuery;
 
+jsdom.jQueryify(window, __dirname + "/lib/jquery-1.4.2.min.js", function() {
+  jQuery = window.jQuery;
+  $ = jQuery;
+});
+
+var script = window.document.createElement('script');
+
+var sanitize = function(message, whole, callback) {
+  // jsdom.jQueryify(window, __dirname + "/lib/jquery-1.4.2.min.js", function() {
+  //   jQuery = window.jQuery;
+  //   $ = jQuery;
+  //console.log(sys.inspect(message, true, 10));
+
+  function urlX(url) {
+    if (/^javascript:void\(0\)/) {
+      return url;
+    }
+  };
+      
+  // compare dom tree
+  if (!whole) {
     var old_value = $('<div>');
     old_value.html(message.old_value);
     var new_value = $('<div>');
@@ -177,34 +194,45 @@ var sanitize = function(message, callback) {
       $(this).attr('lwe-href', $(old_link[i]).attr('lwe-href'));
     });
 
-    // // TODO: compare two dom tree and remove added element from new tree
-    // load$diff();
-    // var old_obj, new_obj;
+    script.src = 'file://' + __dirname + '/lib/jquery.diff.js';
+    script.onload = function() {
+      if (this.readyState === 'complete') {
+        //fn(window);
+        var old_parser = new expatparser();
+        old_parser.parser.parse('<html><body>'+message.old_value+'</body></html>', false);
 
-    // var old_parser = new expatparser();
-    // old_parser.parser.parse('<html><body>'+message.old_value+'</body></html>', false);
+        var new_parser = new expatparser();
+        new_parser.parser.parse('<html><body>'+message.new_value+'</body></html>', false);
 
-    // var new_parser = new expatparser();
-    // new_parser.parser.parse('<html><body>'+message.new_value+'</body></html>', false);
+        //console.log('old----------------------------');
+        //console.log(message.old_value);
+        //console.log(sys.inspect(old_parser.root.html.body, true, 10));
+        delete old_parser.root.html.body.length;
+        
+        //console.log('new----------------------------');
+        //console.log(message.new_value);
+        //console.log(sys.inspect(new_parser.root.html.body, true, 10));
+        delete new_parser.root.html.body.length;
 
-    // console.log('old');
-    // console.log(sys.inspect(old_parser.root.html.body, true, 10));
-    // console.log('new');
-    // console.log(sys.inspect(new_parser.root.html.body, true, 10));
-    // // var result = $.diff(old_parser.root.html.body,
-    // //                     new_parser.root.html.body);
-    // var result = old_parser.root.html.body.equals(new_parser.root.html.body);
-    // console.log('result');
-    // console.log(result);
-    
-    function urlX(url) {
-      if (/^javascript:void\(0\)/) {
-        return url;
+        //console.log('result----------------------------');
+        var result = $.diff(old_parser.root.html.body,
+                            new_parser.root.html.body);
+        // var result = old_parser.root.html.body.equals(new_parser.root.html.body);
+        //console.log(result);
+
+        if ($.isEmptyObject(result.add) === false) {
+          callback(null);
+        }
+        else {
+          callback(html_sanitize(new_value.html(), urlX));
+        }
       }
-    }
-    
-    callback(html_sanitize(new_value.html(), urlX));
-  });
+    };
+
+  } else {
+    callback(html_sanitize(message, urlX));
+  }
+  // });
 };
 
 // websockets
@@ -306,20 +334,55 @@ sm.on('edit', function(client, message){
   // when replying
   var vurl = validateURL(message.url);
   if (vurl) {
+
     var ch = vurl + '|' + message.message.owner;
-    if (development) console.log('edit:', ch);
-    if (development) console.log(sys.inspect(message, true, 10));
+    
+    // delete
+    switch(message.message.type) {
 
-    sanitize(message.message, function(sanitized) {
-      console.log(sanitized);
-      message.message.new_value = sanitized;
+     case 'delete':
+      if (message.username === message.message.owner) {
+        console.log('delete', ch);
+        redis_client.del(ch);
+        redis_client.srem(vurl+'|edit', ch);
+      }
+      break;
+      
+     case 'whole':
 
-      sm.broadcastToChannel(client, ch, message.msgType, { message: message });
+      $.each(message.message.data, function(uid, value) {
+        sanitize(value, true, function(sanitized) {
+          if (development) console.log(sanitized);
+          if (sanitized) {
+            console.log(ch, uid, sanitized);
+            redis_client.hset(ch, uid, sanitized);
+            redis_client.sadd(vurl+'|edit', ch);
+          }
+        });
+      });
+      
+      break;
+      
+    default:
 
-      redis_client.hset(ch, message.message.uid, message.message.new_value);
-      redis_client.sadd(vurl+'|edit', ch);
-    });
+      if (development) console.log('edit:', ch);
+      if (development) console.log(sys.inspect(message, true, 10));
+
+      sanitize(message.message, false, function(sanitized) {
+        if (sanitized) {
+          message.message.new_value = sanitized;
+
+          sm.broadcastToChannel(client, ch, message.msgType, { message: message });
+
+          redis_client.hset(ch, message.message.uid, message.message.new_value);
+          redis_client.sadd(vurl+'|edit', ch);
+        }
+      });
+      
+      break;
+    }
   }
+ 
 });
 
 sm.on('share', function(client, message){
@@ -339,6 +402,7 @@ sm.on('share', function(client, message){
       // the client invite others
       case 'invite':
       var coeditorID = getSessionID(message.message.coeditor);
+      //console.log(coeditorID);
       sm.send('share', coeditorID, { message: message });
       break;
 
@@ -469,124 +533,3 @@ function removeParams(url) {
   return url;
 };
 
-// // http://stackoverflow.com/questions/1068834/object-comparison-in-javascript
-// Object.prototype.equals = function(x)
-// {
-//   for(p in this)
-//   {
-//     if(typeof(x[p])=='undefined') {return false;}
-//   }
-
-//   for(p in this)
-//   {
-//     if (this[p])
-//     {
-//       switch(typeof(this[p]))
-//       {
-//        case 'object':
-//         if (!this[p].equals(x[p])) { return false; }; break;
-//        case 'function':
-//         if (typeof(x[p])=='undefined' || (p != 'equals' && this[p].toString() != x[p].toString())) { return false; }; break;
-//       default:
-//         if (this[p] != x[p]) { return false; }
-//       }
-//     }
-//     else
-//     {
-//       if (x[p])
-//       {
-//         return false;
-//       }
-//     }
-//   }
-
-//   for(p in x)
-//   {
-//     if(typeof(this[p])=='undefined') {return false;}
-//   }
-
-//   return true;
-// };
-
-// var load$diff = function () {
-
-//   /*
-//    * jQuery Diff objects Plugin
-//    * 
-//    * $.diff(obj1, obj2) returns an object containing the differences between two objects. 
-//    *  
-//    * Copyright 2010, Marc Rutkowski / Attractive Media
-//    * Dual licensed under the MIT or GPL Version 2 licenses.
-//    *
-//    * Based upon the code of Michael Schøler:
-//    * http://www.xn--schler-dya.net/blog/2008/01/15/diffing_json_objects/
-//    */
-//   ;(function($){
-//     var _priv = {
-//       cyclicCheck: null,
-
-//       diff: function(obj1, obj2)
-//       {
-//         // 初期化
-//         if (typeof obj1 === 'undefined')
-//           obj1 = {};
-//         if (typeof obj2 === 'undefined')
-//           obj2 = {};
-
-//         var val1, val2, mod = {}, add = {}, del = {}, ret;
-//         // ２個目のオブジェクトでチェック
-//         jQuery.each(obj2, function(key, val2)
-//                     {
-//                       // 同じキーのオブジェクトを１つ目から取得
-//                       val1 = obj1[key];
-//                       bDiff = false;
-//                       // undefined -> 追加
-//                       if (typeof val1 === 'undefined')
-//                         add[key] = val2;
-//                       // 型が異なる -> 変更
-//                       else if (typeof val1 != typeof val2)
-//                         mod[key] = val2;
-//                       // 値が異なる
-//                       else if (val1 !== val2)
-//                       {
-//                         // 型がオブジェクト
-//                         if (typeof val2 === 'object')
-//                         {
-//                           // チェック対象がオブジェクトでなくなるまで再帰的にチェック
-//                           // cyclickCheck の val2 のインデックスが０よりでかい
-//                           if (_priv.cyclicCheck.indexOf(val2) >= 0)
-//                             return false; // break the $.each() loop
-//                           ret = _priv.diff(val1, val2);
-//                           if (!$.isEmptyObject(ret.mod))
-//                             mod[key] = $.extend(true, {}, ret.mod);
-//                           if (!$.isEmptyObject(ret.add))
-//                             add[key] = $.extend(true, {}, ret.add);
-//                           if (!$.isEmptyObject(ret.del))
-//                             del[key] = $.extend(true, {}, ret.del);
-//                           _priv.cyclicCheck.push(val2);
-//                         }
-//                         // オブジェクトでない(数値とか文字とか) -> 変更
-//                         else
-//                           mod[key] = val2;
-//                       }
-//                     });
-        
-//         // １個目のオブジェクトでチェック
-//         jQuery.each(obj1, function(key, val1)
-//                     {
-//                       // ２個目のオブジェクトにない場合 -> 削除
-//                       if (typeof obj2[key] === 'undefined')
-//                         del[key] = true;
-//                     });
-        
-//         return {mod: mod, add: add, del: del};
-//       }
-//     };
-
-//     jQuery.diff = function(obj1, obj2)
-//     {
-//       _priv.cyclicCheck = [];
-//       return _priv.diff(obj1, obj2);
-//     }
-//   })(jQuery);
-// };
