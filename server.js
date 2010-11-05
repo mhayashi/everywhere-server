@@ -8,6 +8,7 @@ var http = require('http'),
     site,
     ws,
     users = {},
+    sessionIDs = {},
     shared = {},
     development = true,
     jsdom  = require('jsdom'),
@@ -145,7 +146,7 @@ var sendEdit = function(vurl, client) {
     var edits = {};
     //console.log(res.length);
     var counter = 0;
-    for (var i = 0; i < res.length; i++) {
+    for (var i = 0, len = res.length; i < len; i++) {
       res[i] = ''+res[i];
       //console.log(res[i]);
       getEachEdit(res[i])(function(owner, edit) {
@@ -251,17 +252,24 @@ sm.on('join', function(client, message){
   if (vurl) {
     // TODO: searching maybe costs a lot.
     if (!sm.channels[vurl] || (sm.channels[vurl].indexOf(client.sessionId) === -1)) {
+      sessionIDs[message.username] = client.sessionId;
       sm.connectToChannel(client, vurl);
       users[client.sessionId] = { username: message.username,
                                   image_url: message.image_url };
       sendLog(client, message);
+
       sendEdit(vurl, client);
+
       sm.broadcastToChannel(client, vurl, message.msgType, { message: message });
     }
     // rejoin
     else {
+      sessionIDs[message.username] = client.sessionId;
+
       sendLog(client, message);
+
       sendEdit(vurl, client);
+
       sm.send('join', client.sessionId, { message: message });
     }
   }
@@ -330,6 +338,54 @@ var removeShare = function(vurl, owner, username) {
   }
 };
 
+var isMember = function(ch, username, cb) {
+  redis_client.exists(ch+'|members', function(err, res) {
+    if (!res) {
+      cb && cb(false);
+    }
+    redis_client.hkeys(ch+'|members', function(err, res) {
+      for (var i = 0, len = res.length; i < len; i++) {
+        if (res[i] === username)
+          cb && cb(true);
+      }
+      cb && cb(false);
+    });
+  });
+};
+
+var sendMembers = function(client, message) {
+  var vurl = validateURL(message.url);
+  var ch = vurl + '|' + message.message.owner;
+
+  if (!vurl) return;
+
+  redis_client.exists(ch+'|members', function(err, res) {
+    if (!res) return;
+    
+    redis_client.hkeys(ch+'|members', function(err, res) {
+      var _users = [];
+      // connect to channel(for edit) when the user revisit
+      for (var i = 0, len = res.length; i < len; i++) {
+        _users.push(''+res[i]);
+
+        if (!sm.channels[ch] || (sm.channels[ch].indexOf(client.sessionId) === -1)) {
+          sm.connectToChannel(client, ch);
+        }
+      }
+      console.log(_users);
+      
+      sm.send('share',
+              client.sessionId,
+              { message: { url: vurl,
+                           shortURL: null,
+                           message: { command: 'members',
+                                      owner: message.message.owner,
+                                      users: _users }}});
+    });
+  });
+};
+
+
 sm.on('edit', function(client, message){
   // when replying
   var vurl = validateURL(message.url);
@@ -337,7 +393,6 @@ sm.on('edit', function(client, message){
 
     var ch = vurl + '|' + message.message.owner;
     
-    // delete
     switch(message.message.type) {
 
      case 'delete':
@@ -370,9 +425,13 @@ sm.on('edit', function(client, message){
 
       sanitize(message.message, false, function(sanitized) {
         if (sanitized) {
+
+          if (development) console.log('sanitized', sanitized);
+          
           message.message.new_value = sanitized;
 
           sm.broadcastToChannel(client, ch, message.msgType, { message: message });
+          sm.send('edit', client.sessionId, { message: message });
 
           redis_client.hset(ch, message.message.uid, message.message.new_value);
           redis_client.sadd(vurl+'|edit', ch);
@@ -389,38 +448,55 @@ sm.on('share', function(client, message){
   var vurl = validateURL(message.url);
   if (vurl) {
     var ch = vurl + '|' + message.message.owner;
-    if (development) console.log('share:'+ch);
-    if (development) console.log(sys.inspect(message, true, 10));
+    // if (development) console.log('share:'+ch);
+    // if (development) console.log(sys.inspect(message, true, 10));
 
     // Add the client to the channel if the channel hasn't open or the client hasn't join the channel
-    if (!sm.channels[ch] || (sm.channels[ch].indexOf(client.sessionId) === -1)) {
-      sm.connectToChannel(client, ch);
-    }
+    var addToChannel = function() {
+      if (!sm.channels[ch] || (sm.channels[ch].indexOf(client.sessionId) === -1)) {
+        sm.connectToChannel(client, ch);
+        redis_client.hset(ch+'|members', message.username, true);
+      }
+    };
 
-    if (development) console.log(ch+':share:'+message.message.command+':'+message.message.coeditor);
+    if (message.username === message.message.owner) {
+      addToChannel();
+    }
+    
+    if (development)
+      console.log(ch, sm.channels[ch], 'share', message.message.command, message.message.coeditor, sessionIDs[message.message.coeditor]);
+    
     switch (message.message.command) {
+      // get members list
+      case 'members':
+      sendMembers(client, message);
+      break;
+
       // the client invite others
       case 'invite':
-      var coeditorID = getSessionID(message.message.coeditor);
-      //console.log(coeditorID);
-      sm.send('share', coeditorID, { message: message });
+      isMember(function(res) {
+        if (res)
+          sm.send('share', sessionIDs[message.message.coeditor], { message: message });
+      });
       break;
 
       // the client approved to join the channel
       case 'join':
-      //console.log(sm.channels[ch]);
+      addToChannel();
       sm.broadcastToChannel(client, ch, message.msgType, { message: message });
       break;
 
       // the client don't approved to join the channel
       case 'deny':
+      sm.exitFromChannel(client, ch);
       sm.broadcastToChannel(client, ch, message.msgType, { message: message });
       break;
       
       // the client kicked out the other co-editor from the channel
       case 'kick':
-      coeditorID = getSessionID(message.message.coeditor);
-      sm.exitFromChannel(coeditorID, ch);
+      var coeditorID = getSessionID(message.message.coeditor);
+      // TODO need client id
+      //sm.exitFromChannel(coeditorID, ch);
       sm.broadcastToChannel(client, ch, message.msgType, { message: message });
       break;
 
@@ -459,34 +535,40 @@ function sendLog(client, message) {
         }
       }
 
-      redis_client.llen(vurl, function(err, res) {
-        if (res == 0) {
+      redis_client.exists(vurl, function(err, res) {
+
+        if (res){
           sm.send('log', client.sessionId, {message: { url: vurl,
                                                        shortURL: null,
                                                        log: null,
                                                        users: _users }});
           return;
         }
-        var loglen = res;
-        var logstart = loglen>=10 ? loglen-10 : 0;
-        redis_client.lrange(vurl, logstart, loglen-1, function(err, res) {
-          //console.log(logstart + "~" + loglen + ":" + res);f
-          var log = [];
-          for (var i = 0, len = res.length; i < len; i++) {
-            log.push(JSON.parse(""+res[i]));
-          }
+        
+        redis_client.llen(vurl, function(err, res) {
 
-          redis_client.get(vurl+':shorten', function(err, res) {
-            sm.send('log', client.sessionId, {message: { url: vurl,
-                                                         shortURL: ""+res,
-                                                         log: log,
-                                                         users: _users }});
+          var loglen = res;
+          var logstart = loglen>=10 ? loglen-10 : 0;
+          redis_client.lrange(vurl, logstart, loglen-1, function(err, res) {
+            //console.log(logstart + "~" + loglen + ":" + res);f
+            var log = [];
+            for (var i = 0, len = res.length; i < len; i++) {
+              log.push(JSON.parse(""+res[i]));
+            }
+
+            redis_client.get(vurl+':shorten', function(err, res) {
+              sm.send('log', client.sessionId, {message: { url: vurl,
+                                                           shortURL: ""+res,
+                                                           log: log,
+                                                           users: _users }});
+            });
           });
         });
       });
     }
   }
 }
+
 
 function validateURL(url) {
   return checkURL(removeParams(url));
