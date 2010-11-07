@@ -543,7 +543,7 @@ function sendLog(client, message) {
 
       redis_client.exists(vurl, function(err, res) {
 
-        if (res){
+        if (!res){
           sm.send('log', client.sessionId, {message: { url: vurl,
                                                        shortURL: null,
                                                        log: null,
