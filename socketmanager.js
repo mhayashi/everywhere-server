@@ -42,7 +42,15 @@ SocketManager.prototype.register = function(socket, options){
     });
     
     client.on('disconnect', function(){
-      // console.log('disconnect');
+      console.log('disconnect');
+      // TODO
+      if (client.channels.length) {
+        for (var i=0;i<client.channels.length;i++) {
+          if (this.channels[client.channels[i]]) {
+            exitFromChannel(client, this.channels[i]);
+          }
+        }
+      }
       context.disconnect(client);
     });
 
