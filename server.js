@@ -44,7 +44,7 @@ site = http.createServer(function(req, res){
 	switch (path){
 	 case '/':
     var lang = null, html = '/index.html';
-    console.log(sys.inspect(req.headers, true, 10));
+    // console.log(sys.inspect(req.headers, true, 10));
     lang = req.headers['accept-language'];
     lang = lang.split(';', 1)[0];
     lang = lang.split(',', 1)[0];
@@ -148,7 +148,7 @@ var getEachEdit = function(key) {
 };
 
 var sendEdit = function(vurl, client) {
-  redis_client.smembers(vurl+'|edit', function(err, res) {
+  redis_client.smembers(vurl+'|*edit*', function(err, res) {
     var edits = {};
     //console.log(res.length);
     var counter = 0;
@@ -345,11 +345,11 @@ var removeShare = function(vurl, owner, username) {
 };
 
 var isMember = function(ch, username, cb) {
-  redis_client.exists(ch+'|members', function(err, res) {
+  redis_client.exists(ch+'|*members*', function(err, res) {
     if (!res) {
       cb && cb(false);
     }
-    redis_client.hkeys(ch+'|members', function(err, res) {
+    redis_client.hkeys(ch+'|*members*', function(err, res) {
       for (var i = 0, len = res.length; i < len; i++) {
         if (res[i] === username)
           cb && cb(true);
@@ -365,10 +365,10 @@ var sendMembers = function(client, message) {
 
   if (!vurl) return;
 
-  redis_client.exists(ch+'|members', function(err, res) {
+  redis_client.exists(ch+'|*members*', function(err, res) {
     if (!res) return;
     
-    redis_client.hkeys(ch+'|members', function(err, res) {
+    redis_client.hkeys(ch+'|*members*', function(err, res) {
       var _users = [];
       // connect to channel(for edit) when the user revisit
       for (var i = 0, len = res.length; i < len; i++) {
@@ -378,7 +378,7 @@ var sendMembers = function(client, message) {
           sm.connectToChannel(client, ch);
         }
       }
-      console.log(_users);
+      if (development) console.log(_users);
       
       sm.send('share',
               client.sessionId,
@@ -399,13 +399,15 @@ sm.on('edit', function(client, message){
 
     var ch = vurl + '|' + message.message.owner;
     
+    if (development) console.log(message.message.type, sys.inspect(message.message, true, 10));
+    
     switch(message.message.type) {
 
      case 'delete':
       if (message.username === message.message.owner) {
-        console.log('delete', ch);
+        // console.log('delete', ch);
         redis_client.del(ch);
-        redis_client.srem(vurl+'|edit', ch);
+        redis_client.srem(vurl+'|*edit*', ch);
       }
       break;
       
@@ -415,9 +417,9 @@ sm.on('edit', function(client, message){
         sanitize(value, true, function(sanitized) {
           if (development) console.log(sanitized);
           if (sanitized) {
-            console.log(ch, uid, sanitized);
+            // console.log(ch, uid, sanitized);
             redis_client.hset(ch, uid, sanitized);
-            redis_client.sadd(vurl+'|edit', ch);
+            redis_client.sadd(vurl+'|*edit*', ch);
           }
         });
       });
@@ -426,8 +428,8 @@ sm.on('edit', function(client, message){
       
     default:
 
-      if (development) console.log('edit:', ch);
-      if (development) console.log(sys.inspect(message, true, 10));
+      // if (development) console.log('edit:', ch);
+      // if (development) console.log(sys.inspect(message, true, 10));
 
       sanitize(message.message, false, function(sanitized) {
         if (sanitized) {
@@ -440,7 +442,7 @@ sm.on('edit', function(client, message){
           sm.send('edit', client.sessionId, { message: message });
 
           redis_client.hset(ch, message.message.uid, message.message.new_value);
-          redis_client.sadd(vurl+'|edit', ch);
+          redis_client.sadd(vurl+'|*edit*', ch);
         }
       });
       
@@ -461,7 +463,7 @@ sm.on('share', function(client, message){
     var addToChannel = function() {
       if (!sm.channels[ch] || (sm.channels[ch].indexOf(client.sessionId) === -1)) {
         sm.connectToChannel(client, ch);
-        redis_client.hset(ch+'|members', message.username, true);
+        redis_client.hset(ch+'|*members*', message.username, true);
       }
     };
 
