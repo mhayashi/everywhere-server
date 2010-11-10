@@ -10,12 +10,12 @@ var http = require('http'),
     users = {},
     sessionIDs = {},
     shared = {},
-    development = true,
+    development = false,
     jsdom  = require('jsdom'),
     window = jsdom.jsdom().createWindow(),
     jQuery,
     $,
-    expatparser = require('node-expat').parser,
+    // expatparser = require('/Users/masahiro/projects/node/libs/node-expat/build/default/node-expat').parser,
     html_sanitizer = require('./html-sanitizer'),
     html_sanitize = html_sanitizer.html_sanitize,
     // jQuery = require('./node-jquery'),
@@ -25,6 +25,12 @@ var http = require('http'),
 //   /http:\/\/mail\.google\.com.*/,
 //   /http:\/\/www\.twitter\.com$/
     ];
+
+if (development) {
+    var expatparser = require('node-expat').parser;
+} else {
+    var expatparser = require('/home/node/.node_libraries/node-expat/build/default/node-expat').parser;
+}
 
 var send404 = function(res){
 	res.writeHead(404);
@@ -48,6 +54,7 @@ site = http.createServer(function(req, res){
     lang = req.headers['accept-language'];
     lang = lang.split(';', 1)[0];
     lang = lang.split(',', 1)[0];
+    //console.log(lang);
     if (lang === 'ja') html = '/index_ja.html';
 		fs.readFile(__dirname + html, function(err, data){
 			if (err) return send404(res);
