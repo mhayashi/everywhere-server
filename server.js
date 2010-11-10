@@ -28,6 +28,9 @@ var http = require('http'),
 
 console.log(sys.inspect(require('node-expat')));
 console.log(expatparser);
+var aaa = new expatparser();
+console.log(aaa);
+
 
 var send404 = function(res){
 	res.writeHead(404);
