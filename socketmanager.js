@@ -44,7 +44,7 @@ SocketManager.prototype.register = function(socket, options){
     client.on('disconnect', function(){
       console.log('disconnect');
       // TODO
-      if (client.channels.length) {
+      if (client.channels && client.channels.length>0){
         for (var i=0;i<client.channels.length;i++) {
           if (this.channels[client.channels[i]]) {
             exitFromChannel(client, this.channels[i]);
