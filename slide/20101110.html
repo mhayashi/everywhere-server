@@ -35,11 +35,12 @@
     <section id="contentcontainer">
       <section id="0">
         <div class="intro">
-          <h2 class="intro">Chat & Edit <strong>Everywhere!</strong></h2>
-          <dir class="sub">Everywhere! enables you to chat on any webpage</dir>
-          <dir class="sub">and edit any webpage's element!</dir>
-          <dir class="sub"><br></dir>
-          <dir class="sub">http://everywhere.no.de/slide/20101020</dir>
+          <h2 class="intro">Translate,<br />
+          Share, <br />
+          &amp; Chat <strong>Everywhere!</strong><br />
+          <span class="sub">好きなページをその場で翻訳してシェアしましょう。<br />
+          </span><br />
+          </h2>
         </div>
       </section>
       
@@ -48,179 +49,95 @@
           <h2 class="">About </h2>
           <dir class="sub">Masahiro Hayashi (林正浩)</dir>
           <dir class="sub">Twitter: <a href="http://twitter.com/masahiroh" target="_blank">@masahiroh</a></dir>
+          <dir class="sub">Github: <a href="http://guthub.com/masahiroh" target="_blank">@masahiroh</a></dir>
           <dir class="sub"><a href="http://nodejs.jp" target="_blank">Node.js JP</a></dir>
         </div>
       </section>
 
       <section id="2">
         <div class="">
-          <h2 class="">What's Everywhere!?</h2>
-          <dir class="sub">すべての Web ページに</dir>
-          <dir class="sub">Real-time Web app を</dir>
-          <dir class="sub">追加してしまおう</dir>
-          <dir class="sub">という試み。</dir>
+          <h2 class="">こんなことを思いついた</h2>
+          <dir class="sub">Node.js と chrome extension 使えば</dir>
+          <dir class="sub">どのページでも動くリアルタイム Web アプリが作れるぞ</dir>
         </div>
       </section>
       
       <section id="3">
         <div class="">
-          <h2 class="">Client</h2>
-          <dir class="sub">Chrome Extension です。</dir>
-          <dir class="sub">これをインストールしてください。</dir>
-          <dir class="sub"><a href="http://bit.ly/everywhere-client" target="_blank">http://bit.ly/everywhere-client</a></dir>
-          <dir class="sub">どこにもアナウンスしない間に、星１つけられたし。。</dir>
+          <h2 class="">命名</h2>
+          <dir class="sub">Everywhere!</dir>
+          <dir class="sub">(twitter のアプリケーションに登録できなかったので ! がついた)</dir>
         </div>
       </section>
 
       <section id="4">
         <div class="">
-          <h2 class="">ひとつめ</h2>
+          <h2 class="">とりあえずチャット</h2>
+          <dir class="sub">デモ</dir>
         </div>
       </section>
 
       <section id="5">
         <div class="">
-          <h2 class="">とにもかくにも..</h2>
-          <dir class="sub">まずは、チャットだろう</dir>
-          <dir class="sub"><br /></dir>
-          <dir class="sub">Extension をインストールした人は</dir>
-          <dir class="sub">ページ右下の数字を</dir>
-          <dir class="sub">クリックしてみてくださいね</dir>
+          <h2 class="">某 node.js 飲み会にて</h2>
+          <dir class="sub">Facebook の翻訳プロジェクトを</dir>
+          <dir class="sub">全てのページでできる</dir>
+          <dir class="sub">アプリケーションを</dir>
+          <dir class="sub">つくりたい。</dir>
+          <dir class="sub">via @jedschmidt</dir>
         </div>
       </section>
       
       <section id="6">
         <div class="">
-          <h2 class="">が、、、</h2>
-          <dir class="sub">ページに Extension をインストールしてる人がいないと役に立たない。</dir>
-          <dir class="sub">共同作業時のコミュニケーション用途でつかったほうがよさげ。</dir>
+          <h2 class=""><s>ぱくって</s>つくってみた</h2>
+          <dir class="sub">閲覧中のページに、</dir>
+          <dir class="sub">インラインエディタを仕込んで</dir>
+          <dir class="sub">要素を編集できるようにした。</dir>
+          <dir class="sub">編集内容は他の人に送信。</dir>
         </div>
       </section>
 
       <section id="7">
         <div class="">
-          <h2 class="">というわけで、</h2>
-          <dir class="sub">エディタをつけてみよう。</dir>
+          <h2 class="">その後・・</h2>
+          <dir class="sub">・共同作業するユーザの指定</dir>
+          <dir class="sub">・redo / undo</dir>
+          <dir class="sub">・翻訳内容をサーバに保存</dir>
+          <dir class="sub">・他の人の翻訳を選べるようにした</dir>
+          <dir class="sub">・Google 翻訳 / Bing 翻訳</dir>
         </div>
       </section>
       
       <section id="8">
         <div class="">
-          <h2 class="">ふたつめ</h2>
+          <h2 class="">アーキテクチャ</h2>
+          <dir class="sub">server: node.js(http/ws server) + redis(kvs)</dir>
+          <dir class="sub">client: chrome extension</dir>
         </div>
       </section>
 
       <section id="9">
         <div class="">
-          <h2 class="">Live Website Editor</h2>
-          <dir class="sub">閲覧中のページに</dir>
-          <dir class="sub">インラインエディタを仕込んで</dir>
-          <dir class="sub">要素を編集できるようにした</dir>
-          <dir class="sub">Extension</dir>
-          <dir class="sub"><a href="ttps://chrome.google.com/extensions/detail/aimajdllbabbccdcmekjkapemehehmjc">URL</a></dir>
+          <h2 class="">使用言語</h2>
+          <dir class="sub">・Javascript</dir>
+          <dir class="sub">・HTML</dir>
+          <dir class="sub">・CSS</dir>
+          <dir class="sub">以上</dir>
         </div>
       </section>
 
       <section id="10">
         <div class="">
-          <h2 class="">Demo</h2>
-          <dir class="sub"><a href="http://everywhere.no.de" target="_blank">everywhere.no.de</a></dir>
+          <h2 class="">コード</h2>
+          <dir class="sub">http://github.com/masahiroh</dir>
         </div>
       </section>
 
       <section id="11">
         <div class="">
-          <h2 class="">で、</h2>
-          <dir class="sub">この編集内容を共有できるようにしてみました</dir>
-          <dir class="sub">※ 試験公開中です</dir>
-        </div>
-      </section>
-
-      <section id="12">
-        <div class="">
-          <h2 class="">Usecase</h2>
-          <dir class="sub">・クラッカーの気分を満喫</dir>
-          <dir class="sub">・自分用のメモ</dir>
-          <dir class="sub">・誤植を直す</dir>
-          <dir class="sub">・見たくない文を消す</dir>
-          <dir class="sub">・翻訳</dir>
-        </div>
-      </section>
-
-      <section id="13">
-        <div class="">
-          <h2 class="">Under developement...</h2>
-          <dir class="sub">・共有相手の指定</dir>
-          <dir class="sub">・ロック</dir>
-          <dir class="sub">・サーバへの保存</dir>
-          <dir class="sub">・redo / undo</dir>
-          <dir class="sub">などなど・・</dir>
-        </div>
-      </section>
-
-      <section id="14">
-        <div class="">
-          <h2 class="">Technical Matter</h2>
-          <dir class="sub">Client: <a href="https://chrome.google.com/extensions/" target="_blank">Chrome Extension</a></dir>
-          <dir class="sub">Server: <a href="http://no.de" target="_blank">Joyent</a> + <a href="http://nodejs.org" target="_blank">Node.js</a> + <a href="http://socket.io" target="_blank">Socket.io</a></dir>
-          <dir class="sub">DB: <a href="http://code.google.com/p/redis/" target="_blank">Redis</a></dir>
-          <dir class="sub">Redis client: <a href="http://github.com/mranney/node_redis/" target="_blank">mranny's node_redis</a></dir>
-        </div>
-      </section>
-
-      <section id="15">
-        <div class="">
-          <h2 class="">Multi-Channel WebSockets</h2>
-          <dir class="sub">socket.io はデフォルトではチャネルがひとつしかないので、レイヤーを追加して自分で管理するが必要あります</dir>
-          <dir class="sub"><a href="http://brianstoner.com/blog/multi-channel-websockets-with-nodejs-and-socketio" target="_blank">Multi-Channel WebSockets with Node.js</a></dir>
-        </div>
-      </section>
-
-      <section id="16">
-        <div class="">
-          <h2 class="">jQuery</h2>
-          <dir class="sub">サーバのコードに jQuery を使えます</dir>
-          <dir class="sub"><a href="github.com/tmpvar/jsdom" target="_blank">JSDOM</a> + jQuery</dir>
-          <dir class="sub"><br /></dir>
-          <pre class="sub">
-var jsdom  = require("jsdom"),
-    window = jsdom.jsdom().createWindow();
-jsdom.jQueryify(window,
-                __dirname + "/lib/jquery-1.4.2.min.js" , function() {
-    var $ = window.jQuery;
-    var el = $('&lt;div>');
-    el.html(message);
-    var links = el.find('a');
-    ...
-}
-          </pre>
-        </div>
-      </section>
-
-      <section id="16">
-        <div class="">
-          <h2 class="">Impression #1</h2>
-          <dir class="sub">・Javascript を純粋に楽しめる</dir>
-          <dir class="sub">　・ブラウザ依存とか考えなくていいし</dir>
-          <dir class="sub">・Javascript Ninja な人は絶対やるべき</dir>
-          <dir class="sub">・コールバックフェチ向け</dir>
-        </div>
-      </section>
-      
-      <section id="17">
-        <div class="">
-          <h2 class="">Impression #2</h2>
-          <dir class="sub"><img src="http://trendsupdates.com/wp-content/uploads/2009/10/google_wave_logo.jpg" height="300px" width="300px"></dir>
-          <dir class="sub">Wave はまじですごい</dir>
-        </div>
-      </section>
-
-      <section id="18">
-        <div class="">
-          <h2 class="">Thank you!</h2>
-          <dir class="sub">今後に期待される方は、</dir>
-          <dir class="sub"><a href="http://bit.ly/everywhere-client" target="_blank">Extension のページ</a>で星をください。</dir>
-          <dir class="sub">やる気が出ます:-)</dir>
+          <h2 class="">以上</h2>
+          <dir class="sub">ご静聴ありがとうございました</dir>
         </div>
       </section>
       
