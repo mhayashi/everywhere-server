@@ -10,12 +10,12 @@ var http = require('http'),
     users = {},
     sessionIDs = {},
     shared = {},
-    development = false,
+    development = true,
     jsdom  = require('jsdom'),
     window = jsdom.jsdom().createWindow(),
     jQuery,
     $,
-    // expatparser = require('/Users/masahiro/projects/node/libs/node-expat/build/default/node-expat').parser,
+    expatparser = require('node-expat').parser,
     html_sanitizer = require('./html-sanitizer'),
     html_sanitize = html_sanitizer.html_sanitize,
     // jQuery = require('./node-jquery'),
@@ -26,11 +26,11 @@ var http = require('http'),
 //   /http:\/\/www\.twitter\.com$/
     ];
 
-if (development) {
-    var expatparser = require('node-expat').parser;
-} else {
-    var expatparser = require('/home/node/.node_libraries/node-expat/build/default/node-expat').parser;
-}
+// if (development) {
+//     var expatparser = require('node-expat').parser;
+// } else {
+//     var expatparser = require('/home/node/.node_libraries/node-expat/build/default/node-expat').parser;
+// }
 
 var send404 = function(res){
 	res.writeHead(404);
