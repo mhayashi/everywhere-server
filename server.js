@@ -26,12 +26,6 @@ var http = require('http'),
 //   /http:\/\/www\.twitter\.com$/
     ];
 
-console.log(sys.inspect(require('node-expat')));
-console.log(expatparser);
-var aaa = new expatparser();
-console.log(aaa);
-
-
 var send404 = function(res){
 	res.writeHead(404);
 	res.write('404');
@@ -490,8 +484,9 @@ sm.on('share', function(client, message){
 
       // the client invite others
       case 'invite':
-      isMember(function(res) {
-        if (res)
+      isMember(ch, message.message.coeditor, function(res) {
+        console.log(res);
+        if (!res)
           sm.send('share', sessionIDs[message.message.coeditor], { message: message });
       });
       break;
