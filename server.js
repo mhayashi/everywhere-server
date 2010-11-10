@@ -26,11 +26,8 @@ var http = require('http'),
 //   /http:\/\/www\.twitter\.com$/
     ];
 
-// if (development) {
-//     var expatparser = require('node-expat').parser;
-// } else {
-//     var expatparser = require('/home/node/.node_libraries/node-expat/build/default/node-expat').parser;
-// }
+console.log(sys.inspect(require('node-expat')));
+console.log(expatparser);
 
 var send404 = function(res){
 	res.writeHead(404);
