@@ -72,8 +72,8 @@ site = http.createServer(function(req, res){
 		//    res.end();
     //  });
 		//  break;
-	 case '/slide/20101020':
-		fs.readFile(__dirname + '/slide/20101020.html', function(err, data){
+	 case '/slide':
+		fs.readFile(__dirname + '/slide/20101110.html', function(err, data){
 			if (err) return send404(res);
 			res.writeHead(200, {'Content-Type': 'text/html'});
 			res.write(data);
@@ -441,6 +441,7 @@ sm.on('edit', function(client, message){
           sm.broadcastToChannel(client, ch, message.msgType, { message: message });
           sm.send('edit', client.sessionId, { message: message });
 
+          console.log(ch);
           redis_client.hset(ch, message.message.uid, message.message.new_value);
           redis_client.sadd(vurl+'|*edit*', ch);
         }
