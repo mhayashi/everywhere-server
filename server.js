@@ -561,7 +561,7 @@ function sendLog(client, message) {
         redis_client.llen(vurl, function(err, res) {
 
           var loglen = res;
-          var logstart = loglen>=10 ? loglen-10 : 0;
+          var logstart = loglen>=20 ? loglen-20 : 0;
           redis_client.lrange(vurl, logstart, loglen-1, function(err, res) {
             //console.log(logstart + "~" + loglen + ":" + res);f
             var log = [];
