@@ -46,9 +46,11 @@ site = http.createServer(function(req, res){
     var lang = null, html = '/index.html';
     // console.log(sys.inspect(req.headers, true, 10));
     lang = req.headers['accept-language'];
-    lang = lang.split(';', 1)[0];
-    lang = lang.split(',', 1)[0];
-    //console.log(lang);
+    if (typeof lang === 'string') {
+      lang = lang.split(';', 1)[0];
+      lang = lang.split(',', 1)[0];
+    }
+    if (development) console.log(lang);
     if (lang === 'ja') html = '/index_ja.html';
 		fs.readFile(__dirname + html, function(err, data){
 			if (err) return send404(res);
