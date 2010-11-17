@@ -18,8 +18,6 @@ var http = require('http'),
     expatparser = require('node-expat').parser,
     html_sanitizer = require('./html-sanitizer'),
     html_sanitize = html_sanitizer.html_sanitize,
-    // jQuery = require('./node-jquery'),
-    // $ = jQuery,
     exemptURLs = [
 //   /http:\/\/www\.google\..*/,
 //   /http:\/\/mail\.google\.com.*/,
